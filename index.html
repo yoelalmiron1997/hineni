@@ -109,7 +109,7 @@ nav.main a:hover{color:var(--ink)}
 .face.front{transform:translateZ(calc(var(--depth,20px) / 2))}
 .face.back{transform:rotateY(180deg) translateZ(calc(var(--depth,20px) / 2))}
 /* cuerpo: capas con la silueta de la remera apiladas en profundidad, para que tenga relleno al girar */
-.flipper{--depth:calc(var(--shirt-w) * .075)}
+.flipper{--depth:calc(var(--shirt-w) * .045)}
 .body{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .core{position:absolute;left:50%;top:.3%;height:calc(var(--fh,1) * 99.4%);width:var(--depth,20px);margin-left:calc(var(--depth,20px) / -2);transform:rotateY(90deg);border-radius:50% 50% 30% 30% / 2% 2% 1.5% 1.5%;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 88%,#fff) 0%,var(--c) 35%,color-mix(in srgb,var(--c) 80%,#000) 100%)}
@@ -527,9 +527,9 @@ function waButton(a, getText) {
     setTimeout(() => { a.href = "#"; }, 0);
   });
 }
-const fullName = p => `${p.name.toUpperCase()} (${p.line === "basica" ? "Básica" : "Oversize"} · ${p.color})`;
+const fullName = p => `${p.name.toUpperCase()} (${p.line === "basica" ? "Básica" : "Oversize"}, ${p.color})`;
 
-document.querySelectorAll(".js-wa").forEach(a => waButton(a, () => "¡Hola Hineni! Vi la colección en la web y quiero hacer un pedido 🙌"));
+document.querySelectorAll(".js-wa").forEach(a => waButton(a, () => "¡Hola Hineni! Vi la colección en la web y quiero hacer un pedido."));
 try { $("#yr").textContent = new Date().getFullYear(); } catch(e){}
 
 /* ---------- Perchero ---------- */
@@ -580,7 +580,7 @@ PRODUCTS.forEach((p, i) => {
     const r = s.garment.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - .5, ny = (e.clientY - r.top) / r.height - .5;
     el.classList.add("tracking");
-    s.ry = nx * 22;
+    s.ry = nx * 12;
     s.garment.style.setProperty("--ry", s.ry.toFixed(1) + "deg");
     s.garment.style.setProperty("--rx", (-ny * 10).toFixed(1) + "deg");
     if (lastX !== null) kick(s, (e.clientX - lastX) * 0.18);
@@ -613,7 +613,7 @@ function step(t) {
     let sway = 0, idle = 0;
     if (ambient) {
       sway = 1.4 * Math.sin(t * .0011 + s.ph) + .5 * Math.sin(t * .0029 + s.ph * 1.7);
-      idle = 14 * Math.sin(t * .00075 + s.ph);
+      idle = 8 * Math.sin(t * .00075 + s.ph);
     }
     s.pivot.style.setProperty("--sw", (s.a + sway).toFixed(2));
     s.idle.style.setProperty("--idle", idle.toFixed(2));
@@ -811,7 +811,7 @@ SIZES.forEach(sz => {
 $("#pdSizes").addEventListener("change", e => { size = e.target.value; updateWa(); });
 waButton($("#pdWa"), () => {
   const p = PRODUCTS[cur], pr = PRICES[p.line];
-  return `¡Hola Hineni! Quiero la remera ${fullName(p)}, talle ${size || "(a definir)"}. Precio ${money(pr.now)}. ¿Está disponible?`;
+  return `¡Hola Hineni! Quiero la remera ${fullName(p)}, talle ${size || "a definir"}. Precio: ${money(pr.now)}. ¿Está disponible?`;
 });
 
 function updateWa() {

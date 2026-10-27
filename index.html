@@ -224,9 +224,32 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 footer a{color:#c9cdcf}
 
 /* botón flotante */
-.float-wa{position:fixed;z-index:40;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--wa);display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.25);color:#fff;transition:transform .2s}
-.float-wa:hover{transform:scale(1.07)}
-.float-wa svg{width:28px;height:28px}
+.float-wa{position:fixed;z-index:40;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;background:var(--wa);display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.25);color:#fff;transition:transform .2s;isolation:isolate}
+.float-wa:hover{transform:scale(1.08)}
+.float-wa svg{width:30px;height:30px;animation:wiggle 6s ease-in-out 2.5s infinite;transform-origin:50% 60%}
+/* ondas que salen del botón */
+.float-wa::before,.float-wa::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--wa);z-index:-1;animation:waRing 2.6s ease-out infinite}
+.float-wa::after{animation-delay:1.3s}
+@keyframes waRing{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.85);opacity:0}}
+@keyframes wiggle{0%,86%,100%{transform:rotate(0)}88%{transform:rotate(-16deg) scale(1.08)}90%{transform:rotate(14deg) scale(1.08)}92%{transform:rotate(-10deg)}94%{transform:rotate(8deg)}96%{transform:rotate(-4deg)}}
+.float-wa .dot{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5484d;color:#fff;font-size:.72rem;font-weight:700;display:grid;place-items:center;border:2px solid var(--paper);animation:dotPop .5s cubic-bezier(.3,1.6,.5,1) 3s both}
+@keyframes dotPop{from{transform:scale(0)}to{transform:scale(1)}}
+/* globito de mensaje */
+.wa-pop{position:fixed;z-index:41;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(92px + env(safe-area-inset-bottom,0px));width:min(260px,calc(100vw - 48px));animation:bubbleIn .5s cubic-bezier(.25,1.4,.5,1) both;transform-origin:100% 100%}
+.wa-pop.out{animation:bubbleOut .3s ease-in both}
+.wa-bubble{position:relative;display:flex;gap:10px;align-items:flex-start;background:var(--paper-2);color:var(--ink);padding:12px 34px 12px 14px;border-radius:16px 16px 4px 16px;box-shadow:0 14px 34px rgba(18,19,20,.22);text-decoration:none;font-size:.9rem;line-height:1.35}
+.wa-bubble b{display:block;font-size:.95rem}
+.wa-bubble span{color:var(--mute)}
+.wa-bubble .av{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);display:grid;place-items:center}
+.wa-bubble .av img{width:22px;height:auto;filter:invert(1)}
+.wa-bubble-x{position:absolute;z-index:2;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:transparent;color:var(--mute);cursor:pointer;display:grid;place-items:center;font-size:1rem;line-height:1}
+.wa-bubble-x:hover{color:var(--ink)}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(10px) scale(.85)}to{opacity:1;transform:none}}
+@keyframes bubbleOut{to{opacity:0;transform:translateY(8px) scale(.9)}}
+/* brillo que cruza los botones verdes grandes */
+.btn.wa{position:relative;overflow:hidden}
+.btn.wa::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:shine 4.5s ease-in-out 1.5s infinite;pointer-events:none}
+@keyframes shine{0%,70%{left:-60%}100%{left:130%}}
 
 /* ---------- MODAL ---------- */
 dialog.pd{width:min(1100px,100%);max-width:100%;max-height:100%;height:min(760px,100%);margin:auto;border:0;padding:0;background:var(--paper-2);color:var(--ink);border-radius:6px;overflow:hidden}
@@ -414,7 +437,9 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
 </main>
 <footer><div class="wrap"><span>© <span id="yr">2026</span> Hineni · Vestite con propósito</span><a href="https://www.instagram.com/hineni.hemeaqui/" target="_blank" rel="noopener">Instagram</a></div></footer>
 
-<a class="float-wa js-wa" href="#" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-wa"/></svg></a>
+<div class="wa-pop" id="waPop" hidden><a class="wa-bubble js-wa" id="waBubble" href="#" target="_blank" rel="noopener"><span class="av"><img src="img/logo-hn.png" alt="" width="479" height="353"></span><span><b>¡Hola! ¿Te ayudamos?</b><span>Escribinos y te asesoramos con el modelo y el talle.</span></span></a>
+<button class="wa-bubble-x" id="waBubbleX" aria-label="Cerrar mensaje">×</button></div>
+<a class="float-wa js-wa" id="waFloat" href="#" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-wa"/></svg><span class="dot" id="waDot" aria-hidden="true">1</span></a>
 
 <dialog class="pd" id="pd" aria-labelledby="pdName">
   <div class="pd-in">
@@ -539,6 +564,24 @@ function waButton(a, getText) {
 const fullName = p => `${p.name.toUpperCase()} (${p.line === "basica" ? "Básica" : "Oversize"}, ${p.color})`;
 
 document.querySelectorAll(".js-wa").forEach(a => waButton(a, () => "¡Hola Hineni! Vi la colección en la web y quiero hacer un pedido."));
+
+/* globito de WhatsApp: aparece a los pocos segundos, una sola vez por visita */
+(() => {
+  const pop = $("#waPop"), bub = $("#waBubble"), x = $("#waBubbleX"), dot = $("#waDot");
+  let seen = false; try { seen = sessionStorage.getItem("hn-wa-bubble") === "1"; } catch (e) {}
+  const remember = () => { try { sessionStorage.setItem("hn-wa-bubble", "1"); } catch (e) {} };
+  const hide = () => {
+    if (pop.hidden) return;
+    pop.classList.add("out");
+    setTimeout(() => { pop.hidden = true; pop.classList.remove("out"); }, 300);
+    remember();
+  };
+  if (seen) dot.hidden = true;
+  else setTimeout(() => { if (!document.getElementById("pd").open) { pop.hidden = false; } }, 4000);
+  x.addEventListener("click", hide);
+  [bub, $("#waFloat")].forEach(el => el.addEventListener("click", () => { hide(); dot.hidden = true; remember(); }));
+  setTimeout(hide, 16000);   // si no lo tocan, se va solo
+})();
 try { $("#yr").textContent = new Date().getFullYear(); } catch(e){}
 
 /* ---------- Perchero ---------- */

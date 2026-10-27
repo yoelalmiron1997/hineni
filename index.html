@@ -94,9 +94,12 @@ nav.main a:hover{color:var(--ink)}
 .hook{display:block;width:34px;height:52px;margin:0 auto -6px;position:relative;z-index:3}
 .garment-btn{display:block;width:100%;border:0;background:none;padding:0;cursor:grab;touch-action:pan-y;perspective:900px}
 .hang.grabbed{z-index:20}
+.garment-btn{position:relative}
+.garment-btn::after,.viewer::after{content:"";position:absolute;left:18%;right:18%;bottom:-4%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(20,24,26,.28),rgba(20,24,26,0));pointer-events:none;z-index:-1}
+.viewer::after{bottom:-3%}
 .hang.grabbed .garment-btn{cursor:grabbing;transform:translateY(-10px) scale(1.05)}
 .garment-btn{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
-.hang.grabbed .face img{filter:drop-shadow(0 26px 22px rgba(20,24,26,.32))}
+
 .hang.grabbed .name{color:var(--ink)}
 .rack-scroll.holding{scroll-snap-type:none}
 .garment{position:relative;display:block;aspect-ratio:.8;transform-style:preserve-3d;transform:rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg));transition:transform .55s cubic-bezier(.2,.8,.2,1)}
@@ -106,17 +109,17 @@ nav.main a:hover{color:var(--ink)}
 .face.front{transform:translateZ(calc(var(--depth,20px) / 2))}
 .face.back{transform:rotateY(180deg) translateZ(calc(var(--depth,20px) / 2))}
 /* cuerpo: capas con la silueta de la remera apiladas en profundidad, para que tenga relleno al girar */
-.flipper{--depth:calc(var(--shirt-w) * .1)}
+.flipper{--depth:calc(var(--shirt-w) * .075)}
 .body{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
-.core{position:absolute;left:50%;top:calc(var(--fh,1) * 6%);height:calc(var(--fh,1) * 88%);width:var(--depth,20px);margin-left:calc(var(--depth,20px) / -2);transform:rotateY(90deg);border-radius:45% 45% 30% 30% / 4% 4% 3% 3%;
+.core{position:absolute;left:50%;top:.3%;height:calc(var(--fh,1) * 99.4%);width:var(--depth,20px);margin-left:calc(var(--depth,20px) / -2);transform:rotateY(90deg);border-radius:50% 50% 30% 30% / 2% 2% 1.5% 1.5%;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 88%,#fff) 0%,var(--c) 35%,color-mix(in srgb,var(--c) 80%,#000) 100%)}
-.slice{position:absolute;inset:0;transform:translateZ(calc(var(--depth,20px) * var(--z)));
+.slice{position:absolute;inset:0;transform-origin:50% 0;transform:translateZ(calc(var(--depth,20px) * var(--z))) scale(calc(1 - (.5 - abs(var(--z))) * .06), .975);
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 88%,#fff) 0%,var(--c) 35%,color-mix(in srgb,var(--c) 82%,#000) 100%);
   -webkit-mask:var(--m) top center/contain no-repeat;mask:var(--m) top center/contain no-repeat}
 .idle{display:block;transform-style:preserve-3d;transform:rotateY(calc(var(--idle,0) * 1deg))}
 .face>*{backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .rack-scroll.pending .hang{visibility:hidden}
-.face img{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:top center;filter:drop-shadow(0 14px 14px rgba(20,24,26,.22));-webkit-user-drag:none;user-select:none}
+.face img{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:top center;-webkit-user-drag:none;user-select:none}
 .wood{position:absolute;z-index:1;left:21%;width:58%;top:.5%;height:11%}
 .hang .tag{position:absolute;top:60px;left:calc(50% + 12px);z-index:4;background:var(--ink);color:var(--paper-2);font-size:.62rem;font-weight:700;letter-spacing:.08em;padding:4px 7px 4px 10px;border-radius:2px;transform:rotate(8deg);transform-origin:left center;pointer-events:none;clip-path:polygon(7px 0,100% 0,100% 100%,7px 100%,0 50%)}
 .hang .tag.teal{background:var(--teal);color:var(--ink)}
@@ -235,8 +238,8 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
 @keyframes breath{from{transform:rotateY(-7deg) rotateZ(-.6deg)}to{transform:rotateY(7deg) rotateZ(.6deg)}}
 .viewer.grabbing .breath{animation-play-state:paused}
 .v-hook{display:block;width:40px;height:56px;margin:0 auto -8px;position:relative;z-index:3}
-.spin{--depth:34px;position:relative;aspect-ratio:.8;transform-style:preserve-3d;transform:rotateY(calc(var(--rot,0) * 1deg))}
-.spin .face img{filter:drop-shadow(0 22px 22px rgba(20,24,26,.25))}
+.spin{--depth:22px;position:relative;aspect-ratio:.8;transform-style:preserve-3d;transform:rotateY(calc(var(--rot,0) * 1deg))}
+
 .stage-tabs{display:flex;gap:28px;margin-top:22px;position:relative;z-index:3}
 .stage-tabs button{background:none;border:0;padding:6px 2px;cursor:pointer;color:var(--mute);font-size:.88rem;border-bottom:2px solid transparent}
 .stage-tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--ink)}
@@ -279,7 +282,7 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
   .pd-in{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;overflow-y:auto;height:100%}
   .stage{padding-top:30px}
   .viewer{width:min(250px,62%)}
-  .spin{--depth:24px}
+  .spin{--depth:16px}
   .pd-cta{position:sticky;bottom:0;z-index:5;background:var(--paper-2);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));margin-inline:-4px;padding-inline:4px}
   .info{overflow:visible;padding:26px max(18px,env(safe-area-inset-left,0px)) 34px}
   .line-head{grid-template-columns:1fr auto}
@@ -500,7 +503,7 @@ const $ = s => document.querySelector(s);
 const money = n => "$" + n.toLocaleString("es-AR");
 const img = (p, side) => `img/${p.id}-${side}.webp`;          // grande (900px): pop-up
 const imgSm = (p, side) => `img/sm/${p.id}-${side}.webp`;    // liviana (480px): perchero y catálogo
-const slices = n => `<span class="core"></span>` + Array.from({ length: n }, (_, k) => `<span class="slice" style="--z:${((k + 1) / (n + 1) - .5).toFixed(3)}"></span>`).join("");
+const slices = n => `<span class="core"></span>` + Array.from({ length: n }, (_, k) => `<span class="slice" style="--z:${((k / (n - 1) - .5) * .985).toFixed(4)}"></span>`).join("");
 /* el núcleo lateral se ajusta al alto real de la remera dentro de su caja (relación 0.8) */
 const fitCore = (im, body) => {
   const set = () => { if (im.naturalWidth) body.style.setProperty("--fh", Math.min(1, im.naturalHeight / im.naturalWidth * .8).toFixed(3)); };
@@ -533,7 +536,7 @@ PRODUCTS.forEach((p, i) => {
         <span class="idle"><span class="garment"><span class="flipper">
           <span class="face front">${WOOD}<img src="${imgSm(p,"front")}" alt="${p.name}, frente" width="480" height="560" decoding="async" ${i<6?'fetchpriority="high"':""} draggable="false"></span>
           <span class="face back">${WOOD}<img data-src="${imgSm(p,"back")}" alt="${p.name}, espalda" width="480" height="560" decoding="async" draggable="false"></span>
-          <span class="body" style="--m:url('${imgSm(p,"front")}');--c:${bodyColor(p)}">${slices(14)}</span>
+          <span class="body" style="--m:url('${imgSm(p,"front")}');--c:${bodyColor(p)}">${slices(18)}</span>
         </span></span></span>
       </button>
       <span class="tag ${p.line==="oversize"?"teal":""}">${PRICES[p.line].off.replace(" OFF","").replace(/^/,"-")}</span>
@@ -802,7 +805,7 @@ function updateWa() {
 }
 
 /* muestra al instante la versión liviana (ya en caché) y la cambia por la grande cuando termina de bajar */
-$("#pdBody").innerHTML = slices(22);
+$("#pdBody").innerHTML = slices(30);
 fitCore($("#pdFront"), $("#pdBody"));
 function setHi(el, p, side) {
   const hi = img(p, side), tok = (el._tok = (el._tok || 0) + 1);

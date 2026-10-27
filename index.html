@@ -113,9 +113,11 @@ nav.main a:hover{color:var(--ink)}
 .body{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .core{position:absolute;left:50%;top:.3%;height:calc(var(--fh,1) * 99.4%);width:var(--depth,20px);margin-left:calc(var(--depth,20px) / -2);transform:rotateY(90deg);border-radius:50% 50% 30% 30% / 2% 2% 1.5% 1.5%;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 88%,#fff) 0%,var(--c) 35%,color-mix(in srgb,var(--c) 80%,#000) 100%)}
-.slice{position:absolute;inset:0;transform-origin:50% 0;transform:translateZ(calc(var(--depth,20px) * var(--z))) scale(calc(1 - (.5 - abs(var(--z))) * .06), .975);
+.slice{position:absolute;inset:0;transform-origin:50% 0;transform:translateZ(calc(var(--depth,20px) * var(--z))) scale(calc(.985 - (.5 - abs(var(--z))) * .06), .97);
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 88%,#fff) 0%,var(--c) 35%,color-mix(in srgb,var(--c) 82%,#000) 100%);
-  -webkit-mask:var(--m) top center/contain no-repeat;mask:var(--m) top center/contain no-repeat}
+  /* solo donde frente Y espalda tienen tela: así el relleno nunca asoma por fuera de ninguna de las dos caras */
+  -webkit-mask:var(--m) top center/contain no-repeat,var(--m2,var(--m)) top center/contain no-repeat;-webkit-mask-composite:source-in;
+  mask:var(--m) top center/contain no-repeat,var(--m2,var(--m)) top center/contain no-repeat;mask-composite:intersect}
 .idle{display:block;transform-style:preserve-3d;transform:rotateY(calc(var(--idle,0) * 1deg))}
 .face>*{backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .rack-scroll.pending .hang{visibility:hidden}
@@ -549,7 +551,7 @@ PRODUCTS.forEach((p, i) => {
         <span class="idle"><span class="garment"><span class="flipper">
           <span class="face front">${WOOD}<img src="${imgSm(p,"front")}" alt="${p.name}, frente" width="480" height="560" decoding="async" ${i<6?'fetchpriority="high"':""} draggable="false"></span>
           <span class="face back">${WOOD}<img data-src="${imgSm(p,"back")}" alt="${p.name}, espalda" width="480" height="560" decoding="async" draggable="false"></span>
-          <span class="body" style="--m:url('${imgSm(p,"front")}');--c:${bodyColor(p)}">${slices(18)}</span>
+          <span class="body" style="--m:url('${imgSm(p,"front")}');--m2:url('${imgSm(p,"back")}');--c:${bodyColor(p)}">${slices(18)}</span>
         </span></span></span>
       </button>
       <span class="tag ${p.line==="oversize"?"teal":""}">${PRICES[p.line].off.replace(" OFF","").replace(/^/,"-")}</span>
@@ -835,6 +837,7 @@ function fill(i) {
   setHi($("#pdFront"), p, "front"); $("#pdFront").alt = p.name + ", frente";
   setHi($("#pdBack"), p, "back");    $("#pdBack").alt = p.name + ", espalda";
   $("#pdBody").style.setProperty("--m", `url('${imgSm(p,"front")}')`);
+  $("#pdBody").style.setProperty("--m2", `url('${imgSm(p,"back")}')`);
   $("#pdBody").style.setProperty("--c", bodyColor(p));
   // dejamos listas las de al lado para que las flechas sean instantáneas
   [i - 1, i + 1].forEach(k => { const q = PRODUCTS[(k + PRODUCTS.length) % PRODUCTS.length]; ["front","back"].forEach(sd => { new Image().src = img(q, sd); }); });

@@ -103,7 +103,7 @@ nav.main a:hover{color:var(--ink)}
 .hang.grabbed .name{color:var(--ink)}
 .rack-scroll.holding{scroll-snap-type:none}
 .garment{position:relative;display:block;aspect-ratio:.8;transform-style:preserve-3d;transform:rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg));transition:transform .55s cubic-bezier(.2,.8,.2,1)}
-.flipper{position:absolute;inset:0;display:block;transform-style:preserve-3d;transform:rotateY(var(--flip,0deg));transition:transform .75s cubic-bezier(.3,1.25,.45,1)}
+.flipper{position:absolute;inset:0;display:block;transform-style:preserve-3d;transform:rotateY(var(--flip,0deg));transition:transform .48s cubic-bezier(.7,0,.3,1)}
 .hang.tracking .garment{transition:transform .12s linear}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:flex-start;justify-content:center}
 .face.front{transform:translateZ(calc(var(--depth,20px) / 2))}
@@ -471,7 +471,8 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
 /* ============================================================
    CONFIGURACIÓN — cambiá estos valores
    ============================================================ */
-const WHATSAPP_NUMBER = ""; // Ej: "5491123456789" (código país 54 + 9 + área sin 0 + número sin 15). Vacío = el usuario elige el contacto.
+// Contacto de WhatsApp: guardado codificado, se arma recién cuando alguien toca un botón (ver README).
+const WA_CODE = "==AReJ1QMJlEfNUQZpVX";
 const PRICES = {
   basica:   { old: 20000, now: 15000, off: "25% OFF", cut: "Básica · corte clásico" },
   oversize: { old: 25000, now: 20000, off: "20% OFF", cut: "Oversize · calce amplio" }
@@ -513,10 +514,22 @@ const loadBack = im => { if (im && im.dataset.src) { im.src = im.dataset.src; im
 const bodyColor = p => p.color === "Negra" ? "#1c1d20" : "#e2e4e5";
 const srcset = (p, side) => `${imgSm(p, side)} 480w, ${img(p, side)} 900w`;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const waLink = text => (WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : "https://wa.me/") + "?text=" + encodeURIComponent(text);
+const waTo = () => {
+  const k = "hineni-perchero", b = atob(WA_CODE.split("").reverse().join(""));
+  let d = ""; for (let i = 0; i < b.length; i++) d += String.fromCharCode(b.charCodeAt(i) ^ k.charCodeAt(i % k.length) ^ (i * 7 % 31));
+  return d;
+};
+/* el link se arma en el momento del toque y se borra enseguida: no queda en el HTML ni en el código de la página */
+function waButton(a, getText) {
+  a.href = "#";
+  a.addEventListener("click", () => {
+    a.href = "https://wa.me/" + waTo() + "?text=" + encodeURIComponent(getText());
+    setTimeout(() => { a.href = "#"; }, 0);
+  });
+}
 const fullName = p => `${p.name.toUpperCase()} (${p.line === "basica" ? "Básica" : "Oversize"} · ${p.color})`;
 
-document.querySelectorAll(".js-wa").forEach(a => a.href = waLink("¡Hola Hineni! Vi la colección en la web y quiero hacer un pedido 🙌"));
+document.querySelectorAll(".js-wa").forEach(a => waButton(a, () => "¡Hola Hineni! Vi la colección en la web y quiero hacer un pedido 🙌"));
 try { $("#yr").textContent = new Date().getFullYear(); } catch(e){}
 
 /* ---------- Perchero ---------- */
@@ -588,11 +601,11 @@ function kick(s, dv) { if (reduce) return; s.v += dv * 6; start(); }
 let ambient = false;
 function start() { if (!running) { running = true; lastT = performance.now(); requestAnimationFrame(step); } }
 function step(t) {
-  const dt = Math.min(0.033, (t - lastT) / 1000); lastT = t;
+  const dtAll = Math.min(0.12, (t - lastT) / 1000); lastT = t;
+  const n = Math.max(1, Math.ceil(dtAll * 120)), dt = dtAll / n;
   let energy = 0;
   for (const s of swing) {
-    const acc = -55 * s.a - 3.2 * s.v;
-    s.v += acc * dt; s.a += s.v * dt;
+    for (let k = 0; k < n; k++) { const acc = -55 * s.a - 3.2 * s.v; s.v += acc * dt; s.a += s.v * dt; }
     s.v = Math.max(-220, Math.min(220, s.v));
     if (s.a > 24) { s.a = 24; if (s.v > 0) s.v *= -.35; }
     else if (s.a < -24) { s.a = -24; if (s.v < 0) s.v *= -.35; }
@@ -796,11 +809,12 @@ SIZES.forEach(sz => {
   $("#pdSizes").insertAdjacentHTML("beforeend", `<input type="radio" name="talle" id="${id}" value="${sz}"><label for="${id}">${sz}</label>`);
 });
 $("#pdSizes").addEventListener("change", e => { size = e.target.value; updateWa(); });
+waButton($("#pdWa"), () => {
+  const p = PRODUCTS[cur], pr = PRICES[p.line];
+  return `¡Hola Hineni! Quiero la remera ${fullName(p)}, talle ${size || "(a definir)"}. Precio ${money(pr.now)}. ¿Está disponible?`;
+});
 
 function updateWa() {
-  const p = PRODUCTS[cur], pr = PRICES[p.line];
-  const msg = `¡Hola Hineni! Quiero la remera ${fullName(p)}, talle ${size || "(a definir)"}. Precio ${money(pr.now)}. ¿Está disponible?`;
-  $("#pdWa").href = waLink(msg);
   $("#pdSzNote").textContent = size ? `Talle ${size} seleccionado.` : "Elegí tu talle, o consultalo por WhatsApp.";
 }
 
@@ -880,12 +894,20 @@ function animate() {
   if (animId) return;
   let lt = performance.now();
   const tick = t => {
-    const dt = Math.min(0.033, (t - lt) / 1000); lt = t;
-    if (!dragging) {
-      if (reduce) { rot = target; rotV = 0; }
-      else { const acc = (target - rot) * 90 - rotV * 14; rotV += acc * dt; rot += rotV * dt; }
+    // integramos en pasos chicos según el tiempo real, así el giro dura lo mismo aunque la compu vaya lenta
+    let left = Math.min(0.12, (t - lt) / 1000); lt = t;
+    while (left > 0) {
+      const dt = Math.min(1 / 120, left); left -= dt;
+      if (!dragging) {
+        if (reduce) { rot = target; rotV = 0; }
+        else {
+          const far = Math.abs(target - rot) > 45;          // al dar vuelta, pasa rápido por el costado
+          const acc = far ? (target - rot) * 330 - rotV * 36 : (target - rot) * 150 - rotV * 19;
+          rotV += acc * dt; rot += rotV * dt;
+        }
+      }
+      const pacc = -40 * pv.a - 2.6 * pv.v; pv.v += pacc * dt; pv.a += pv.v * dt;
     }
-    const pacc = -40 * pv.a - 2.6 * pv.v; pv.v += pacc * dt; pv.a += pv.v * dt;
     pv.a = Math.max(-12, Math.min(12, pv.a));
     vPivot.style.setProperty("--sw", pv.a.toFixed(2));
     applyRot();
@@ -898,23 +920,29 @@ function animate() {
 
 /* arrastrar para girar */
 (() => {
-  let sx = 0, sr = 0, lx = 0, lt = 0, vel = 0;
+  const MAX = 36;                                       // inclinación máxima mientras arrastrás
+  let sx = 0, base = 0, lx = 0, lt = 0, vel = 0, flipped = false, down = false;
+  const flipTo = dir => { dragging = false; flipped = true; target = base + dir * 180; animate(); };
   viewer.addEventListener("pointerdown", e => {
-    dragging = true; viewer.classList.add("grabbing"); viewer.setPointerCapture(e.pointerId);
-    sx = lx = e.clientX; sr = rot; lt = performance.now(); vel = 0; rotV = 0; animate();
+    down = true; dragging = true; flipped = false; viewer.classList.add("grabbing"); viewer.setPointerCapture(e.pointerId);
+    base = Math.round(rot / 180) * 180; target = base;
+    sx = lx = e.clientX; lt = performance.now(); vel = 0; rotV = 0; animate();
   });
   viewer.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    const now = performance.now();
-    rot = sr + (e.clientX - sx) * 0.75;
-    vel = (e.clientX - lx) / Math.max(1, now - lt) * 0.75 * 1000; lx = e.clientX; lt = now;
+    if (!down || flipped) return;
+    const now = performance.now(), off = (e.clientX - sx) * 0.6;
+    vel = (e.clientX - lx) / Math.max(1, now - lt) * 1000; lx = e.clientX; lt = now;
     pv.v += (e.movementX || 0) * 0.25;
+    if (Math.abs(off) > 70) { flipTo(Math.sign(off)); return; }
+    rot = base + MAX * Math.tanh(off / MAX);
   });
   const end = () => {
-    if (!dragging) return;
-    dragging = false; viewer.classList.remove("grabbing");
-    const proj = rot + vel * 0.18;
-    target = Math.round(proj / 180) * 180; rotV = vel * 0.5; animate();
+    if (!down) return;
+    down = false; viewer.classList.remove("grabbing");
+    if (flipped) return;
+    dragging = false;
+    if (Math.abs(vel) > 650) flipTo(Math.sign(vel));
+    else { target = base; animate(); }
   };
   viewer.addEventListener("pointerup", end);
   viewer.addEventListener("pointercancel", end);

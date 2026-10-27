@@ -7,15 +7,17 @@ Página de exhibición con perchero animado, pop-up con frente y espalda girator
 - `index.html`: la página completa (estilos y código adentro).
 - `img/`: fotos de cada remera, frente y espalda (`modelo-front.webp` / `modelo-back.webp`) y el logo.
 
-## 1. Poné tu número de WhatsApp
+## 1. Contacto de WhatsApp
 
-Abrí `index.html`, buscá `WHATSAPP_NUMBER` y escribí tu número en formato internacional, sin `+`, espacios ni guiones:
+El número **no está escrito en ningún lado** del código: está guardado codificado en `WA_CODE` (dentro de `index.html`) y el link a WhatsApp se arma recién cuando alguien toca un botón, y se borra enseguida.
+
+Para cambiarlo, abrí la consola del navegador (F12) en la página y pegá esto con el número nuevo (formato `549` + área sin 0 + número sin 15):
 
 ```js
-const WHATSAPP_NUMBER = "5491123456789"; // 54 + 9 + código de área sin 0 + número sin 15
+((n) => { const k = "hineni-perchero"; let b = ""; for (let i = 0; i < n.length; i++) b += String.fromCharCode(n.charCodeAt(i) ^ k.charCodeAt(i % k.length) ^ (i * 7 % 31)); return btoa(b).split("").reverse().join(""); })("549XXXXXXXXXX")
 ```
 
-Si lo dejás vacío, WhatsApp le pide al cliente que elija a quién mandarle el mensaje.
+Copiá el resultado y reemplazá el valor de `WA_CODE`.
 
 ## 2. Subilo a GitHub Pages
 

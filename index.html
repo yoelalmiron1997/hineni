@@ -506,9 +506,12 @@ const $ = s => document.querySelector(s);
 const money = n => "$" + n.toLocaleString("es-AR");
 const img = (p, side) => `img/${p.id}-${side}.webp`;          // grande (900px): pop-up
 const imgSm = (p, side) => `img/sm/${p.id}-${side}.webp`;    // liviana (480px): perchero y catálogo
+/* celulares y Safari en iPhone/iPad: menos capas 3D, para no agotar la memoria gráfica */
+const LITE = matchMedia("(hover: none)").matches || /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const slices = n => `<span class="core"></span>` + Array.from({ length: n }, (_, k) => `<span class="slice" style="--z:${((k / (n - 1) - .5) * .985).toFixed(4)}"></span>`).join("");
 /* el núcleo lateral se ajusta al alto real de la remera dentro de su caja (relación 0.8) */
 const fitCore = (im, body) => {
+  if (!im || !body) return;
   const set = () => { if (im.naturalWidth) body.style.setProperty("--fh", Math.min(1, im.naturalHeight / im.naturalWidth * .8).toFixed(3)); };
   if (im.complete) set(); im.addEventListener("load", set);
 };
@@ -551,7 +554,7 @@ PRODUCTS.forEach((p, i) => {
         <span class="idle"><span class="garment"><span class="flipper">
           <span class="face front">${WOOD}<img src="${imgSm(p,"front")}" alt="${p.name}, frente" width="480" height="560" decoding="async" ${i<6?'fetchpriority="high"':""} draggable="false"></span>
           <span class="face back">${WOOD}<img data-src="${imgSm(p,"back")}" alt="${p.name}, espalda" width="480" height="560" decoding="async" draggable="false"></span>
-          <span class="body" style="--m:url('${imgSm(p,"front")}');--m2:url('${imgSm(p,"back")}');--c:${bodyColor(p)}">${slices(18)}</span>
+          ${LITE ? "" : `<span class="body" style="--m:url('${imgSm(p,"front")}');--m2:url('${imgSm(p,"back")}');--c:${bodyColor(p)}">${slices(10)}</span>`}
         </span></span></span>
       </button>
       <span class="tag ${p.line==="oversize"?"teal":""}">${PRICES[p.line].off.replace(" OFF","").replace(/^/,"-")}</span>
@@ -625,7 +628,9 @@ function step(t) {
 }
 if (!reduce) {
   let onScreen = true;
-  const setAmbient = () => { ambient = onScreen && !document.hidden; if (ambient) start(); };
+  // la brisa se pausa con la pestaña oculta o con el pop-up abierto (el perchero queda tapado)
+  const setAmbient = () => { ambient = onScreen && !document.hidden && !document.getElementById("pd").open; if (ambient) start(); };
+  new MutationObserver(setAmbient).observe(document.getElementById("pd"), { attributes: true, attributeFilter: ["open"] });
   new IntersectionObserver(es => { onScreen = es[0].isIntersecting; setAmbient(); }).observe(rack);
   document.addEventListener("visibilitychange", setAmbient);
 }
@@ -821,7 +826,7 @@ function updateWa() {
 }
 
 /* muestra al instante la versión liviana (ya en caché) y la cambia por la grande cuando termina de bajar */
-$("#pdBody").innerHTML = slices(30);
+$("#pdBody").innerHTML = slices(LITE ? 8 : 16);
 fitCore($("#pdFront"), $("#pdBody"));
 function setHi(el, p, side) {
   const hi = img(p, side), tok = (el._tok = (el._tok || 0) + 1);

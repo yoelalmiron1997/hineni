@@ -104,6 +104,13 @@ nav.main a:hover{color:var(--ink)}
 .hang.tracking .garment{transition:transform .12s linear}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:flex-start;justify-content:center}
 .face.back{transform:rotateY(180deg)}
+.idle{display:block;transform-style:preserve-3d;transform:rotateY(calc(var(--idle,0) * 1deg))}
+.face .shade{position:absolute;inset:0;z-index:3;pointer-events:none;-webkit-mask:var(--m) top center/contain no-repeat;mask:var(--m) top center/contain no-repeat;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.30) 0%,rgba(0,0,0,0) 20%,rgba(255,255,255,.13) calc(44% + var(--lx,0%)),rgba(255,255,255,0) calc(62% + var(--lx,0%)),rgba(0,0,0,.34) 100%),
+    linear-gradient(180deg,rgba(255,255,255,.07) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 70%,rgba(0,0,0,.20) 100%)}
+.face>*{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.rack-scroll.pending .hang{visibility:hidden}
 .face img{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:top center;filter:drop-shadow(0 14px 14px rgba(20,24,26,.22));-webkit-user-drag:none;user-select:none}
 .wood{position:absolute;z-index:1;left:21%;width:58%;top:.5%;height:11%}
 .hang .tag{position:absolute;top:60px;left:calc(50% + 12px);z-index:4;background:var(--ink);color:var(--paper-2);font-size:.62rem;font-weight:700;letter-spacing:.08em;padding:4px 7px 4px 10px;border-radius:2px;transform:rotate(8deg);transform-origin:left center;pointer-events:none;clip-path:polygon(7px 0,100% 0,100% 100%,7px 100%,0 50%)}
@@ -218,7 +225,10 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
 .viewer .rod{position:absolute;bottom:calc(100% - 4px);left:50%;width:2px;height:600px;background:var(--steel);transform:translateX(-50%)}
 .viewer{position:relative;width:min(400px,78%);perspective:1300px;cursor:grab;touch-action:pan-y;user-select:none;margin-top:18px}
 .viewer.grabbing{cursor:grabbing}
-.v-pivot{transform-origin:50% 0;transform:rotate(calc(var(--sw,0) * 1deg))}
+.v-pivot{transform-origin:50% 0;transform:rotate(calc(var(--sw,0) * 1deg));transform-style:preserve-3d}
+.breath{transform-style:preserve-3d;animation:breath 7s ease-in-out infinite alternate}
+@keyframes breath{from{transform:rotateY(-7deg) rotateZ(-.6deg)}to{transform:rotateY(7deg) rotateZ(.6deg)}}
+.viewer.grabbing .breath{animation-play-state:paused}
 .v-hook{display:block;width:40px;height:56px;margin:0 auto -8px;position:relative;z-index:3}
 .spin{position:relative;aspect-ratio:.8;transform-style:preserve-3d;transform:rotateY(calc(var(--rot,0) * 1deg))}
 .spin .face img{filter:drop-shadow(0 22px 22px rgba(20,24,26,.25))}
@@ -400,10 +410,10 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
         <span class="rod" aria-hidden="true"></span>
         <div class="v-pivot" id="vPivot">
           <svg class="v-hook" viewBox="0 0 40 56" aria-hidden="true"><use href="#i-hook"/></svg>
-          <div class="spin" id="spin">
-            <div class="face front"><svg class="wood" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><use href="#i-wood"/></svg><img id="pdFront" alt=""></div>
-            <div class="face back"><svg class="wood" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><use href="#i-wood"/></svg><img id="pdBack" alt=""></div>
-          </div>
+          <div class="breath"><div class="spin" id="spin">
+            <div class="face front"><svg class="wood" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><use href="#i-wood"/></svg><img id="pdFront" alt=""><span class="shade" id="shFront"></span></div>
+            <div class="face back"><svg class="wood" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><use href="#i-wood"/></svg><img id="pdBack" alt=""><span class="shade" id="shBack"></span></div>
+          </div></div>
         </div>
       </div>
       <div class="stage-tabs" role="tablist" aria-label="Lado de la remera">
@@ -481,7 +491,9 @@ const PRODUCTS = [
 
 const $ = s => document.querySelector(s);
 const money = n => "$" + n.toLocaleString("es-AR");
-const img = (p, side) => `img/${p.id}-${side}.webp`;
+const img = (p, side) => `img/${p.id}-${side}.webp`;          // grande (900px): pop-up
+const imgSm = (p, side) => `img/sm/${p.id}-${side}.webp`;    // liviana (480px): perchero y catálogo
+const srcset = (p, side) => `${imgSm(p, side)} 480w, ${img(p, side)} 900w`;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const waLink = text => (WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : "https://wa.me/") + "?text=" + encodeURIComponent(text);
 const fullName = p => `${p.name.toUpperCase()} (${p.line === "basica" ? "Básica" : "Oversize"} · ${p.color})`;
@@ -496,23 +508,23 @@ const swing = []; // estado físico de cada percha
 
 PRODUCTS.forEach((p, i) => {
   const el = document.createElement("div");
-  el.className = "hang enter";
+  el.className = "hang";
   el.dataset.line = p.line;
   el.style.setProperty("--d", (i * 0.06) + "s");
   el.innerHTML = `
     <span class="pivot">
       <svg class="hook" viewBox="0 0 40 56" aria-hidden="true"><use href="#i-hook"/></svg>
       <button class="garment-btn" aria-label="Ver ${fullName(p)}">
-        <span class="garment"><span class="flipper">
-          <span class="face front">${WOOD}<img src="${img(p,"front")}" alt="${p.name}, frente" loading="${i<8?"eager":"lazy"}" draggable="false"></span>
-          <span class="face back">${WOOD}<img src="${img(p,"back")}" alt="${p.name}, espalda" loading="lazy" draggable="false"></span>
-        </span></span>
+        <span class="idle"><span class="garment"><span class="flipper">
+          <span class="face front">${WOOD}<img src="${imgSm(p,"front")}" alt="${p.name}, frente" width="480" height="560" decoding="async" ${i<6?'fetchpriority="high"':""} draggable="false"><span class="shade" style="--m:url('${imgSm(p,"front")}')"></span></span>
+          <span class="face back">${WOOD}<img data-src="${imgSm(p,"back")}" alt="${p.name}, espalda" width="480" height="560" decoding="async" draggable="false"><span class="shade" style="--m:url('${imgSm(p,"back")}')"></span></span>
+        </span></span></span>
       </button>
       <span class="tag ${p.line==="oversize"?"teal":""}">${PRICES[p.line].off.replace(" OFF","").replace(/^/,"-")}</span>
     </span>
     <span class="name">${p.name}</span>`;
   rack.appendChild(el);
-  const s = { el, pivot: el.querySelector(".pivot"), garment: el.querySelector(".garment"), a: 0, v: 0, flipped: false, p };
+  const s = { el, pivot: el.querySelector(".pivot"), garment: el.querySelector(".garment"), idle: el.querySelector(".idle"), a: 0, v: 0, ry: 0, flipped: false, p, ph: Math.random() * Math.PI * 2 };
   swing.push(s);
   el.addEventListener("animationend", () => { el.classList.remove("enter"); kick(s, (i % 2 ? 1 : -1) * 6); }, { once: true });
 
@@ -535,7 +547,8 @@ PRODUCTS.forEach((p, i) => {
     const r = s.garment.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - .5, ny = (e.clientY - r.top) / r.height - .5;
     el.classList.add("tracking");
-    s.garment.style.setProperty("--ry", (nx * 22).toFixed(1) + "deg");
+    s.ry = nx * 22;
+    s.garment.style.setProperty("--ry", s.ry.toFixed(1) + "deg");
     s.garment.style.setProperty("--rx", (-ny * 10).toFixed(1) + "deg");
     if (lastX !== null) kick(s, (e.clientX - lastX) * 0.18);
     lastX = e.clientX;
@@ -543,7 +556,7 @@ PRODUCTS.forEach((p, i) => {
   el.addEventListener("pointerleave", () => {
     lastX = null; el.classList.remove("tracking");
     if (!el.classList.contains("grabbed")) flip(false);
-    s.garment.style.setProperty("--ry", "0deg"); s.garment.style.setProperty("--rx", "0deg");
+    s.ry = 0; s.garment.style.setProperty("--ry", "0deg"); s.garment.style.setProperty("--rx", "0deg");
   });
   el.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") flip(true); });
 });
@@ -551,6 +564,8 @@ PRODUCTS.forEach((p, i) => {
 /* física de péndulo */
 let running = false, lastT = 0;
 function kick(s, dv) { if (reduce) return; s.v += dv * 6; start(); }
+/* brisa: movimiento suave y permanente mientras el perchero está a la vista */
+let ambient = false;
 function start() { if (!running) { running = true; lastT = performance.now(); requestAnimationFrame(step); } }
 function step(t) {
   const dt = Math.min(0.033, (t - lastT) / 1000); lastT = t;
@@ -560,11 +575,43 @@ function step(t) {
     s.v += acc * dt; s.a += s.v * dt;
     s.a = Math.max(-28, Math.min(28, s.a));
     energy += Math.abs(s.a) + Math.abs(s.v) * .05;
-    s.pivot.style.setProperty("--sw", s.a.toFixed(2));
+    let sway = 0, idle = 0;
+    if (ambient) {
+      sway = 1.4 * Math.sin(t * .0011 + s.ph) + .5 * Math.sin(t * .0029 + s.ph * 1.7);
+      idle = 10 * Math.sin(t * .00075 + s.ph);
+    }
+    s.pivot.style.setProperty("--sw", (s.a + sway).toFixed(2));
+    s.idle.style.setProperty("--idle", idle.toFixed(2));
+    // la luz se corre sobre la tela según hacia dónde gira
+    s.garment.style.setProperty("--lx", (-(idle + s.ry) * .9).toFixed(1) + "%");
   }
-  if (energy > 0.05) requestAnimationFrame(step);
-  else { running = false; swing.forEach(s => { s.a = s.v = 0; s.pivot.style.setProperty("--sw", 0); }); }
+  if (ambient || energy > 0.05) requestAnimationFrame(step);
+  else { running = false; swing.forEach(s => { s.a = s.v = 0; s.pivot.style.setProperty("--sw", 0); s.idle.style.setProperty("--idle", 0); }); }
 }
+if (!reduce) {
+  let onScreen = true;
+  const setAmbient = () => { ambient = onScreen && !document.hidden; if (ambient) start(); };
+  new IntersectionObserver(es => { onScreen = es[0].isIntersecting; setAmbient(); }).observe(rack);
+  document.addEventListener("visibilitychange", setAmbient);
+}
+
+/* carga de imágenes: el perchero aparece recién cuando están todos los frentes, así entran juntas */
+(() => {
+  rack.classList.add("pending");
+  const fronts = [...rack.querySelectorAll(".face.front img")];
+  const ready = Promise.all(fronts.map(im => im.decode ? im.decode().catch(() => {}) : Promise.resolve()));
+  const timeout = new Promise(r => setTimeout(r, 2500));
+  Promise.race([ready, timeout]).then(() => {
+    rack.classList.remove("pending");
+    swing.forEach((s, i) => {
+      s.el.style.setProperty("--d", (i * 0.06) + "s");
+      s.el.classList.add("enter");
+    });
+    // después cargamos las espaldas en segundo plano, para que el giro sea instantáneo
+    const later = window.requestIdleCallback || (cb => setTimeout(cb, 400));
+    later(() => rack.querySelectorAll(".face.back img[data-src]").forEach(im => { im.src = im.dataset.src; im.removeAttribute("data-src"); }));
+  });
+})();
 
 /* el scroll del riel mueve todas las perchas */
 let lastScroll = rack.scrollLeft;
@@ -706,7 +753,7 @@ PRODUCTS.map((p, i) => [p, i]).sort((a, b) => a[0].name.localeCompare(b[0].name,
   const b = document.createElement("button");
   b.className = "card";
   b.innerHTML = `
-    <span class="pic"><img class="f" src="${img(p,"back")}" alt="${p.name}, espalda" loading="lazy"><img class="b" src="${img(p,"front")}" alt="${p.name}, frente" loading="lazy">
+    <span class="pic"><img class="f" src="${imgSm(p,"back")}" srcset="${srcset(p,"back")}" sizes="(max-width:760px) 45vw, 370px" width="480" height="560" alt="${p.name}, espalda" loading="lazy" decoding="async"><img class="b" src="${imgSm(p,"front")}" srcset="${srcset(p,"front")}" sizes="(max-width:760px) 45vw, 370px" width="480" height="560" alt="${p.name}, frente" loading="lazy" decoding="async">
       <span class="side"><span class="s1">Espalda</span><span class="s2">Frente</span></span></span>
     <span class="meta"><span class="nm">${p.name}</span><span class="price-pill"><span class="old">${money(PRICES[p.line].old)}</span><span class="new">${money(PRICES[p.line].now)}</span></span></span>
     <span class="vs"><span class="color" style="background:${p.color === "Negra" ? "#121314" : "#ffffff"}"></span>${p.color} · ${p.ref}</span>`;
@@ -732,12 +779,24 @@ function updateWa() {
   $("#pdSzNote").textContent = size ? `Talle ${size} seleccionado.` : "Elegí tu talle, o consultalo por WhatsApp.";
 }
 
+/* muestra al instante la versión liviana (ya en caché) y la cambia por la grande cuando termina de bajar */
+function setHi(el, p, side) {
+  const hi = img(p, side), tok = (el._tok = (el._tok || 0) + 1);
+  el.src = imgSm(p, side);
+  const pre = new Image();
+  pre.onload = () => { if (el._tok === tok) el.src = hi; };
+  pre.src = hi;
+}
 function fill(i) {
   const p = PRODUCTS[i], pr = PRICES[p.line];
   cur = i;
   $("#pdCount").textContent = String(i + 1).padStart(2, "0") + " / " + String(PRODUCTS.length).padStart(2, "0");
-  $("#pdFront").src = img(p, "front"); $("#pdFront").alt = p.name + ", frente";
-  $("#pdBack").src = img(p, "back");   $("#pdBack").alt = p.name + ", espalda";
+  setHi($("#pdFront"), p, "front"); $("#pdFront").alt = p.name + ", frente";
+  setHi($("#pdBack"), p, "back");    $("#pdBack").alt = p.name + ", espalda";
+  $("#shFront").style.setProperty("--m", `url('${imgSm(p,"front")}')`);
+  $("#shBack").style.setProperty("--m", `url('${imgSm(p,"back")}')`);
+  // dejamos listas las de al lado para que las flechas sean instantáneas
+  [i - 1, i + 1].forEach(k => { const q = PRODUCTS[(k + PRODUCTS.length) % PRODUCTS.length]; ["front","back"].forEach(sd => { new Image().src = img(q, sd); }); });
   $("#pdEyebrow").textContent = (p.line === "basica" ? "Remera básica" : "Remera oversize") + " · " + p.color;
   $("#pdName").textContent = p.name;
   $("#pdVerse").innerHTML = `“${p.verse}”<cite>${p.ref}</cite>`;

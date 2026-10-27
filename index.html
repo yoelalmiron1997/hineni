@@ -506,6 +506,7 @@ const fitCore = (im, body) => {
   const set = () => { if (im.naturalWidth) body.style.setProperty("--fh", Math.min(1, im.naturalHeight / im.naturalWidth * .8).toFixed(3)); };
   if (im.complete) set(); im.addEventListener("load", set);
 };
+const loadBack = im => { if (im && im.dataset.src) { im.src = im.dataset.src; im.removeAttribute("data-src"); } };
 const bodyColor = p => p.color === "Negra" ? "#1c1d20" : "#e2e4e5";
 const srcset = (p, side) => `${imgSm(p, side)} 480w, ${img(p, side)} 900w`;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -553,7 +554,7 @@ PRODUCTS.forEach((p, i) => {
     kick(s, on ? 5 : -5);
   };
   const btn = el.querySelector(".garment-btn");
-  btn.addEventListener("focus", () => { if (btn.matches(":focus-visible")) flip(true); });
+  btn.addEventListener("focus", () => { if (btn.matches(":focus-visible")) { loadBack(el.querySelector(".face.back img")); flip(true); } });
   btn.addEventListener("blur", () => flip(false));
 
   // Inclinación 3D siguiendo el cursor + empujón según la velocidad del mouse
@@ -574,7 +575,7 @@ PRODUCTS.forEach((p, i) => {
     if (!el.classList.contains("grabbed")) flip(false);
     s.ry = 0; s.garment.style.setProperty("--ry", "0deg"); s.garment.style.setProperty("--rx", "0deg");
   });
-  el.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") flip(true); });
+  el.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") { loadBack(el.querySelector(".face.back img")); flip(true); } });
 });
 
 /* física de péndulo */
@@ -622,8 +623,8 @@ if (!reduce) {
       s.el.classList.add("enter");
     });
     // después cargamos las espaldas en segundo plano, para que el giro sea instantáneo
-    const later = window.requestIdleCallback || (cb => setTimeout(cb, 400));
-    later(() => rack.querySelectorAll(".face.back img[data-src]").forEach(im => { im.src = im.dataset.src; im.removeAttribute("data-src"); }));
+    // (sin requestIdleCallback: con la brisa animándose siempre, el navegador casi nunca queda "ocioso")
+    setTimeout(() => rack.querySelectorAll(".face.back img[data-src]").forEach(loadBack), 300);
   });
 })();
 

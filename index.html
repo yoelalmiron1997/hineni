@@ -83,7 +83,7 @@ nav.main a:hover{color:var(--ink)}
 .rail{position:absolute;left:0;right:0;top:34px;height:7px;border-radius:4px;background:linear-gradient(#c3c8cb,#8d9499 55%,#6f767b);box-shadow:0 3px 6px rgba(0,0,0,.18);z-index:1}
 .rail::before,.rail::after{content:"";position:absolute;top:-28px;width:7px;height:34px;background:linear-gradient(90deg,#8d9499,#c3c8cb,#8d9499)}
 .rail::before{left:4%}.rail::after{right:4%}
-.rack-scroll{position:relative;z-index:2;display:flex;gap:clamp(6px,1.4vw,22px);overflow-x:auto;overflow-y:hidden;padding:0 max(16px,calc(50vw - 600px)) 34px;scrollbar-width:none;cursor:grab;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+.rack-scroll{position:relative;z-index:2;display:flex;gap:clamp(6px,1.4vw,22px);overflow-x:auto;overflow-y:hidden;padding:0 max(16px,calc(50vw - 600px)) 34px;scrollbar-width:none;cursor:grab;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;user-select:none;-webkit-user-select:none}
 .rack-scroll::-webkit-scrollbar{display:none}
 .rack-scroll.dragging{cursor:grabbing;scroll-behavior:auto}
 .rack-scroll.dragging .hang{pointer-events:none}
@@ -380,7 +380,7 @@ dialog.pd[open]{animation:pop .45s cubic-bezier(.2,.9,.25,1)}
 
   <section class="block" id="nosotros">
     <div class="wrap about">
-      <div class="brand"><img src="img/logo-hineni.png" alt="Hineni" width="510" height="336"><div class="tr"><span lang="he" dir="rtl">הִנֵּנִי</span> · heme aquí</div></div>
+      <div class="brand"><img src="img/logo-hineni.png" alt="Hineni" width="510" height="336"><div class="tr">Hineni · heme aquí</div></div>
       <div>
         <blockquote>“Heme aquí, envíame a mí.”<cite>Isaías 6:8</cite></blockquote>
         <p>Nacemos con un propósito claro: llevar el mensaje de la Cruz a través de lo que vestimos. Hineni es la respuesta de un corazón dispuesto a decir “Heme aquí, envíame a mí”.</p>
@@ -590,7 +590,9 @@ function step(t) {
   for (const s of swing) {
     const acc = -55 * s.a - 3.2 * s.v;
     s.v += acc * dt; s.a += s.v * dt;
-    s.a = Math.max(-28, Math.min(28, s.a));
+    s.v = Math.max(-220, Math.min(220, s.v));
+    if (s.a > 24) { s.a = 24; if (s.v > 0) s.v *= -.35; }
+    else if (s.a < -24) { s.a = -24; if (s.v < 0) s.v *= -.35; }
     energy += Math.abs(s.a) + Math.abs(s.v) * .05;
     let sway = 0, idle = 0;
     if (ambient) {
@@ -633,8 +635,8 @@ let lastScroll = rack.scrollLeft;
 rack.addEventListener("scroll", () => {
   const d = rack.scrollLeft - lastScroll; lastScroll = rack.scrollLeft;
   if (Math.abs(d) < 0.5 || reduce) return;
-  const k = Math.max(-4, Math.min(4, d * 0.09));
-  for (const s of swing) s.v -= k * 6;
+  const k = Math.max(-3, Math.min(3, d * 0.07)) * (rack.classList.contains("holding") ? .3 : 1);
+  for (const s of swing) s.v -= k * 5;
   start();
 }, { passive: true });
 
@@ -722,7 +724,10 @@ let dragMoved = false;
     const now = performance.now(), dt = Math.max(8, now - lastT);
     vel = vel * .6 + ((e.clientX - lastPX) / dt) * .4;   // px por ms
     lastPX = e.clientX; lastT = now;
-    if (s) kick(s, Math.max(-2, Math.min(2, vel * 1.3)));  // la remera se queda atrás y se hamaca
+    if (s && !reduce) {                                   // la remera se queda atrás y se hamaca
+      const lag = Math.max(-16, Math.min(16, vel * 14));
+      s.v += (lag - s.a) * 2.2; start();
+    }
     place();
   });
   const drop = e => {
@@ -741,6 +746,8 @@ let dragMoved = false;
   };
   window.addEventListener("pointerup", drop);
   window.addEventListener("pointercancel", drop);
+  window.addEventListener("blur", () => { if (el) drop({ pointerId: pid }); });
+  rack.addEventListener("lostpointercapture", e => { if (el && moved && e.pointerId === pid) drop(e); });
 })();
 const pageBy = dir => rack.scrollBy({ left: dir * rack.clientWidth * 0.7, behavior: reduce ? "auto" : "smooth" });
 $("#rPrev").onclick = () => pageBy(-1);

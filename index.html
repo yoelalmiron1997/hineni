@@ -199,7 +199,9 @@ table.t td:first-child{font-weight:700}
 /* nosotros */
 .about{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:56px;align-items:center}
 .about .heb{font-family:var(--f-serif);font-size:clamp(4rem,10vw,7.5rem);line-height:1;direction:rtl;text-align:left}
-.about .brand img{display:block;width:min(340px,80%);height:auto}
+.about .brand{display:flex;flex-direction:column;align-items:center;width:fit-content;max-width:100%}
+.about .brand img{display:block;width:min(340px,80vw);height:auto}
+.about .brand .tr{text-align:center;margin-top:14px;padding-left:.2em}
 .about .brand .tr span{font-family:var(--f-hebrew);font-weight:500;font-size:1.15rem;letter-spacing:0;text-transform:none;color:var(--ink);unicode-bidi:isolate}
 .about .tr{font-size:.82rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-top:10px}
 .about blockquote{margin:0;font-family:var(--f-serif);font-weight:500;font-style:italic;font-size:clamp(1.7rem,3.2vw,2.4rem);line-height:1.2}
